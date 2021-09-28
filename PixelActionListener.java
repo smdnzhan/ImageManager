@@ -16,6 +16,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
     public JPanel jp;
     public Graphics g; //从JPanel上获取
     public int[][] pixelArr = null; //rgb值
+    public File file ;
 
     //构造方法
     public PixelActionListener(JPanel jp) {
@@ -35,9 +36,9 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             jfc.setSize(100,300);
             jfc.showOpenDialog(null);
             //选择的文件路径
-            File file =jfc.getSelectedFile();
+            file =jfc.getSelectedFile();
             try {
-                pixelArr = getImagePixel(file, jp.getGraphics());//直接传画笔对象会空指针? this.g X
+                pixelArr = getImagePixel(jp.getGraphics());//直接传画笔对象会空指针? this.g X
                 System.out.println("正常执行");
             } catch (Exception ioException) {
                 ioException.printStackTrace();
@@ -117,7 +118,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
     }
 
     //画图片
-    public int[][] getImagePixel(File file, Graphics g) throws Exception {
+    public int[][] getImagePixel(Graphics g) throws Exception {
         //定义二维数组 存储RGB值
         BufferedImage bi = null;
         if (file.exists()) {
@@ -126,16 +127,20 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             int height = bi.getHeight();
             int width = bi.getWidth();
             int[][] pic = new int[width][height];
+            BufferedImage bi_img=new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            Graphics bg = bi_img.getGraphics();
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
                     int rgb = bi.getRGB(i, j);
                     pic[i][j] = rgb;
                     int[] temp = getAllColor(pic[i][j]); //拆分RGB值
                     g.setColor(new Color(temp[0], temp[1], temp[2]));
-                    g.drawLine(i + X0, j + Y0, i + X0, j + Y0);
+                    bg.drawLine(i + X0, j + Y0, i + X0, j + Y0);
                 }
             }
             System.out.println("画图成功");
+            bg.drawImage(bi_img,X0,Y0,null);
+            jp.repaint();
             return pic;
         } else
             System.out.println("路径错误");
