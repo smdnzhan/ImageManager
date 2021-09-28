@@ -22,7 +22,7 @@ public class PixelPanel extends JPanel implements PixelConfig {
             JButton jbt = new JButton(buttonName);
             jbt.setFont(createFont());
             jbt.addActionListener(al);
-            jbt.setPreferredSize(new Dimension(150, 100));
+            jbt.setPreferredSize(new Dimension(120, 100));
             jp.add(jbt);
         }
     }

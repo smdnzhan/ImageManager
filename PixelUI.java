@@ -29,7 +29,7 @@ public class PixelUI extends JFrame implements PixelConfig {
         jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jf.setVisible(true);
         Graphics g = pl.getGraphics();
-        pl.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        pl.setLayout(new FlowLayout(FlowLayout.LEADING));
         jf.add(pl);
         //传递画笔 画笔从JPanel上获得
         PixelMouse mouse = new PixelMouse(g,jf,pl);
