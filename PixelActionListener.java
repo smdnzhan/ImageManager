@@ -15,8 +15,9 @@ import java.io.IOException;
 public class PixelActionListener implements ActionListener,PixelConfig {
     public JPanel jp;
     public Graphics g; //从JPanel上获取
-    public int[][] pixelArr = null; //rgb值
+    public int[][] pixelArr ; //rgb值
     public File file ;
+    public BufferedImage bi_img;
 
     //构造方法
     public PixelActionListener(JPanel jp) {
@@ -52,7 +53,8 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                     int gray = (c[0]+c[1]+c[2])/3; //平均法取灰度值
                     jp.getGraphics().setColor(new Color(gray,gray,gray));
                     jp.getGraphics().drawLine(i + X0, j + Y0, i + X0, j + Y0);
-                    pixelArr[i][j]=gray<<16+gray<<8+gray;
+                    pixelArr[i][j]=gray<<16|gray<<8|gray;
+                    //保存像素值变化
                 }
             }jp.repaint();
         }else
@@ -74,7 +76,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                 jp.repaint();
                 int param = js.getValue();
 
-                 */
+                */
                 for (int i = 0; i <pixelArr.length ; i++) {
                     for (int j = 0; j <pixelArr[0].length ; j++) {
                         int red = getAllColor(pixelArr[i][j])[0]+SCALE_PARAM;
@@ -85,7 +87,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                         blue = limit(blue);
                         jp.getGraphics().setColor(new Color(red,green,blue));
                         jp.getGraphics().drawLine(i + X0, j + Y0, i + X0, j + Y0);
-                        pixelArr[i][j]=red<<16+green<<8+blue;
+                        pixelArr[i][j]=red<<16|green<<8|blue;
                         //越界问题？
                     }
                 }
@@ -106,7 +108,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                             bw=0;
                         jp.getGraphics().setColor(new Color(bw,bw,bw));
                         jp.getGraphics().drawLine(i + X0, j + Y0, i + X0, j + Y0);
-                        pixelArr[i][j]=bw<<16+bw<<8+bw;
+                        pixelArr[i][j]=bw<<16|bw<<8|bw;
                     }
                 }
                 jp.repaint();
@@ -127,14 +129,14 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             int height = bi.getHeight();
             int width = bi.getWidth();
             int[][] pic = new int[width][height];
-            BufferedImage bi_img=new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            bi_img=new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             Graphics bg = bi_img.getGraphics();
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
                     int rgb = bi.getRGB(i, j);
                     pic[i][j] = rgb;
                     int[] temp = getAllColor(pic[i][j]); //拆分RGB值
-                    g.setColor(new Color(temp[0], temp[1], temp[2]));
+                    bg.setColor(new Color(temp[0], temp[1], temp[2]));
                     bg.drawLine(i + X0, j + Y0, i + X0, j + Y0);
                 }
             }
