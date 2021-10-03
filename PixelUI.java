@@ -32,11 +32,9 @@ public class PixelUI extends JFrame implements PixelConfig {
         pl.setLayout(new FlowLayout(FlowLayout.LEADING));
         jf.add(pl);
         //传递画笔 画笔从JPanel上获得
-        PixelMouse mouse = new PixelMouse(g,jf,pl);
-        PixelActionListener pal = new PixelActionListener(pl);
-        //pal.drawPixel(pal.pixelArr,g);
+        PixelMouse mouse = new PixelMouse(g,jf,pl, pl.pal);
         //添加鼠标监听器
-        jf.addMouseListener(mouse);
+        pl.addMouseListener(mouse);
     }
 
 }

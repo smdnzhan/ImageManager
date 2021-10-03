@@ -7,4 +7,7 @@ public interface PixelConfig {
     String LETTER = "宋体";
     int LETTER_SIZE= 16;
     int SCALE_PARAM = 60;
+    int MOSAIC_SIZE=6;
+    String SAVE_NAME = "target";
+
 }

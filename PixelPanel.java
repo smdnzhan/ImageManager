@@ -30,8 +30,7 @@ public class PixelPanel extends JPanel implements PixelConfig {
     @Override
     public void paint(Graphics g) {
         super.paint(g);
-        pal.drawPixel(pal.pixelArr,g);
-        //g.drawImage(pal.bi_img,X0,Y0,null);
+        g.drawImage(pal.bi_img, X0, Y0, null);
     }
 
     public Font createFont(){

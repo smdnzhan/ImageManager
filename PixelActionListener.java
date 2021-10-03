@@ -2,8 +2,6 @@ package PCcamera;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -14,11 +12,13 @@ import java.io.IOException;
 
 public class PixelActionListener implements ActionListener,PixelConfig {
     public JPanel jp;
-    public Graphics g; //从JPanel上获取
+    public Graphics bg;
     public int[][] pixelArr ; //rgb值
-    public File file ;
+    public File input ;
     public BufferedImage bi_img;
-
+    public PixelMouse pm;
+    public Mosaic mc ;
+    public File output;
     //构造方法
     public PixelActionListener(JPanel jp) {
         this.jp = jp;
@@ -37,10 +37,9 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             jfc.setSize(100,300);
             jfc.showOpenDialog(null);
             //选择的文件路径
-            file =jfc.getSelectedFile();
+            input =jfc.getSelectedFile();
             try {
-                pixelArr = getImagePixel(jp.getGraphics());//直接传画笔对象会空指针? this.g X
-                System.out.println("正常执行");
+                pixelArr = getImagePixel(input.getAbsolutePath());//打开图片时缓存图片
             } catch (Exception ioException) {
                 ioException.printStackTrace();
             }
@@ -51,12 +50,13 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                 for (int j = 0; j < pixelArr[0].length; j++) {
                     int[] c = getAllColor(pixelArr[i][j]);
                     int gray = (c[0]+c[1]+c[2])/3; //平均法取灰度值
-                    jp.getGraphics().setColor(new Color(gray,gray,gray));
-                    jp.getGraphics().drawLine(i + X0, j + Y0, i + X0, j + Y0);
+                    bg.setColor(new Color(gray,gray,gray));
+                    bg.drawRect(i, j, 1,1);
                     pixelArr[i][j]=gray<<16|gray<<8|gray;
                     //保存像素值变化
                 }
-            }jp.repaint();
+            }
+            jp.getGraphics().drawImage(bi_img,X0,Y0,null); //画笔的位置就是出现的位置
         }else
                 System.out.println("必须先选定一张图片");
         }
@@ -85,13 +85,13 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                         red = limit(red); //防止越界
                         green = limit(green);
                         blue = limit(blue);
-                        jp.getGraphics().setColor(new Color(red,green,blue));
-                        jp.getGraphics().drawLine(i + X0, j + Y0, i + X0, j + Y0);
+                        bg.setColor(new Color(red,green,blue));
+                        bg.drawLine(i , j , i , j );
                         pixelArr[i][j]=red<<16|green<<8|blue;
                         //越界问题？
                     }
                 }
-                jp.repaint();
+                jp.getGraphics().drawImage(bi_img,X0,Y0,null);
             }else
                 System.out.println("必须先选择一张图片");
         }
@@ -106,49 +106,82 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                             bw=255;
                         }else
                             bw=0;
-                        jp.getGraphics().setColor(new Color(bw,bw,bw));
-                        jp.getGraphics().drawLine(i + X0, j + Y0, i + X0, j + Y0);
+                        bg.setColor(new Color(bw,bw,bw));
+                        bg.drawLine(i , j , i , j );
                         pixelArr[i][j]=bw<<16|bw<<8|bw;
                     }
                 }
-                jp.repaint();
+                jp.getGraphics().drawImage(bi_img,X0,Y0,null);
             }
-            System.out.println("必须先选择一张图片");
+            else
+                System.out.println("必须先选择一张图片");
+        }
+        else if (s.equals("马赛克")) {
+            if (pixelArr != null) {
+                for (int i = 0; i < pixelArr.length; i++) {
+                    for (int j = 0; j < pixelArr[i].length; j += MOSAIC_SIZE) {
+                        int rgb = pixelArr[i][j];
+                        Color color = new Color(rgb);
+                        bg.setColor(color);
+                        bg.fillRect(i, j, MOSAIC_SIZE, MOSAIC_SIZE);
+                    }
+                }
+                jp.getGraphics().drawImage(bi_img, X0, Y0, null);
+            }else
+                System.out.println("必须先选择一张图片");
+        }
+        else if(s.equals("保存图片")){
+            JFileChooser jfc2 = new JFileChooser("C:\\Users\\ZDX\\Pictures\\Voto");
+            jfc2.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("png","jpg","png");
+            jfc2.setFileFilter(filter);
+            jfc2.showSaveDialog(null);
+            File fl=jfc2.getSelectedFile(); //选中的文件夹
+            if(fl!=null){
+            String path = fl.getAbsolutePath()+"\\"+SAVE_NAME+".png";
+            try {
+                save(path);
+                System.out.println("保存成功");
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }else
+                System.out.println("未选取文件");
         }
         else
             System.out.println("其他");
+
+        jp.getGraphics().drawImage(bi_img,X0,Y0,null);
     }
 
     //画图片
-    public int[][] getImagePixel(Graphics g) throws Exception {
+    public int[][] getImagePixel(String s) throws Exception {
         //定义二维数组 存储RGB值
         BufferedImage bi = null;
+        File file = new File(s);
         if (file.exists()) {
             bi = ImageIO.read(file);
             //获得图片长和宽
             int height = bi.getHeight();
             int width = bi.getWidth();
             int[][] pic = new int[width][height];
-            bi_img=new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            Graphics bg = bi_img.getGraphics();
+            bi_img =new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            bg = bi_img.getGraphics();
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
                     int rgb = bi.getRGB(i, j);
                     pic[i][j] = rgb;
-                    int[] temp = getAllColor(pic[i][j]); //拆分RGB值
-                    bg.setColor(new Color(temp[0], temp[1], temp[2]));
-                    bg.drawLine(i + X0, j + Y0, i + X0, j + Y0);
+                    bg.setColor(new Color(rgb));
+                    bg.drawRect(i, j, 1,1);
                 }
             }
             System.out.println("画图成功");
-            bg.drawImage(bi_img,X0,Y0,null);
-            jp.repaint();
+            jp.getGraphics().drawImage(bi_img,X0,Y0,null);
             return pic;
         } else
             System.out.println("路径错误");
         return null;
     }
-
     //根据RGB值 返回三原色值
     public int[] getAllColor(int image) {
         Color c = new Color(image);
@@ -159,19 +192,6 @@ public class PixelActionListener implements ActionListener,PixelConfig {
         return rgb;
     }
 
-    public void drawPixel(int[][] image, Graphics g) {
-        if (image != null) {
-            for (int i = 0; i < image.length; i++) {
-                for (int j = 0; j < image[0].length; j++) {
-                    int[] temp = getAllColor(image[i][j]);
-                    g.setColor(new Color(temp[0], temp[1], temp[2]));
-                    g.drawLine(i + X0, j + Y0, i + X0, j + Y0);
-                }
-            }
-        }else
-            System.out.println("暂无图片");
-
-    }
     //限定最大值
     public int limit(int rgb){
         if (rgb>255){
@@ -180,5 +200,11 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             rgb = 0;
         }
         return rgb;
+    }
+
+
+    public void save(String s) throws IOException {
+        output = new File(s);
+        ImageIO.write(bi_img, "png", output);
     }
 }

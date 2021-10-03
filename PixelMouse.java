@@ -17,18 +17,30 @@ public class PixelMouse extends MouseAdapter implements PixelConfig{
     private JFrame jf;
     private JPanel jp;
     private PixelActionListener pal;
+    public Mosaic mc;
 
     //初始化画笔
-    public PixelMouse(Graphics g,JFrame jf,JPanel jp) {
+    public PixelMouse(Graphics g,JFrame jf,JPanel jp,PixelActionListener pal) {
         this.g = g;
         this.jf = jf;
         this.jp = jp;
+        this.pal = pal;
     }
 
     public void mouseClicked(MouseEvent e) {
-        int x = e.getX();
-        int y = e.getY();
+       //int x =e.getX();
+       //int y= e.getY();
+       /*
+       if (x<=pal.pixelArr.length&&x>=X0&&y>=Y0&&y<=pal.pixelArr[0].length&&pal.mc.method){
+            this.mc = pal.mc;
+            pal.mc.click=true;
+            System.out.println("点击在图片上");
+            System.out.println(pal.mc.click+" "+pal.mc.method);
+            pal.mc.drawMosaic(x,y, jp.getGraphics());
+            jp.repaint();
+       }
 
+        */
     }
 
     //根据RGB值 返回三原色值
