@@ -2,6 +2,8 @@ package PCcamera;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -20,10 +22,10 @@ public class PixelActionListener implements ActionListener,PixelConfig {
     public Mosaic mc ;
     public File output;
     public Linked<BufferedImage> imageList ;
+    JSlider js;
     //构造方法
     public PixelActionListener(JPanel jp) {
         this.jp = jp;
-        //this.g = jp.getGraphics(); 1
     }
 
 
@@ -31,6 +33,10 @@ public class PixelActionListener implements ActionListener,PixelConfig {
     public void actionPerformed(ActionEvent e) {
         String s = e.getActionCommand();
         if (s.equals("打开图片")) {
+            if (js!=null){
+                jp.remove(js);
+                jp.repaint();
+            }
             //初始文件夹
             JFileChooser jfc = new JFileChooser("C:\\Users\\ZDX\\Pictures\\Voto");
             FileNameExtensionFilter filter = new FileNameExtensionFilter("选取一张jpg或png图片","jpg","png");
@@ -42,10 +48,14 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             try {
                 pixelArr = getImagePixel(input.getAbsolutePath());//打开图片时缓存图片
             } catch (Exception ioException) {
-                ioException.printStackTrace();
+                System.out.println("未选择图片");
             }
         }
         else if(s.equals("灰度")){ //灰度就是没有色彩，RGB色彩分量全部相等
+            if (js!=null){
+                jp.remove(js);
+                jp.repaint();
+            }
             if (pixelArr!=null){
                 //每个效果都新创建一个缓冲区
                 bi_img =new BufferedImage(pixelArr.length, pixelArr[0].length, BufferedImage.TYPE_INT_RGB);
@@ -67,43 +77,46 @@ public class PixelActionListener implements ActionListener,PixelConfig {
         }
         //亮度调整:三通道加同一个值
         else if (s.equals("亮度")){
+            if (js!=null){
+                jp.remove(js);
+            }
             if (pixelArr!=null){
                 bi_img =new BufferedImage(pixelArr.length, pixelArr[0].length, BufferedImage.TYPE_INT_RGB);
                 bg = bi_img.getGraphics();
-                /*
-                JSlider js = new JSlider(SwingConstants.VERTICAL,-20,20,0);
+                js = new JSlider(SwingConstants.VERTICAL,-60,60,0);
+                jp.add(js,BorderLayout.EAST);
                 js.setPaintLabels(true);
                 js.addChangeListener(new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
                         System.out.println("当前值:"+js.getValue());
+                        int param = js.getValue();
+                        for (int i = 0; i <pixelArr.length ; i++) {
+                            for (int j = 0; j <pixelArr[0].length ; j++) {
+                                int red = getAllColor(pixelArr[i][j])[0]+param;
+                                int green = getAllColor(pixelArr[i][j])[1]+param;
+                                int blue = getAllColor(pixelArr[i][j])[2]+param;
+                                red = limit(red); //防止越界
+                                green = limit(green);
+                                blue = limit(blue);
+                                bg.setColor(new Color(red,green,blue));
+                                bg.drawLine(i , j , i , j );
+                            }
+                        }
+                        //手动更新
+                        jp.getGraphics().drawImage(bi_img,X0,Y0,null);
                     }
                 });
-                jp.add(js,FlowLayout.RIGHT);
-                jp.repaint();
-                int param = js.getValue();
-
-                */
-                for (int i = 0; i <pixelArr.length ; i++) {
-                    for (int j = 0; j <pixelArr[0].length ; j++) {
-                        int red = getAllColor(pixelArr[i][j])[0]+SCALE_PARAM;
-                        int green = getAllColor(pixelArr[i][j])[1]+SCALE_PARAM;
-                        int blue = getAllColor(pixelArr[i][j])[2]+SCALE_PARAM;
-                        red = limit(red); //防止越界
-                        green = limit(green);
-                        blue = limit(blue);
-                        bg.setColor(new Color(red,green,blue));
-                        bg.drawLine(i , j , i , j );
-                        //pixelArr[i][j]=red<<16|green<<8|blue;
-                        //越界问题？
-                    }
-                }
-                jp.getGraphics().drawImage(bi_img,X0,Y0,null);
+                //只能添加一次?
                 imageList.addFirst(bi_img);
             }else
                 System.out.println("必须先选择一张图片");
         }
-        else if (s.equals("黑白")){ //Q！
+        else if (s.equals("黑白")){
+            if (js!=null){
+                jp.remove(js);
+                jp.repaint();
+            }
             if (pixelArr!=null){
                 bi_img =new BufferedImage(pixelArr.length, pixelArr[0].length, BufferedImage.TYPE_INT_RGB);
                 bg = bi_img.getGraphics();
@@ -128,6 +141,10 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                 System.out.println("必须先选择一张图片");
         }
         else if (s.equals("马赛克")) {
+            if (js!=null){
+                jp.remove(js);
+                jp.repaint();
+            }
             if (pixelArr != null) {
                 bi_img =new BufferedImage(pixelArr.length, pixelArr[0].length, BufferedImage.TYPE_INT_RGB);
                 bg = bi_img.getGraphics();
@@ -145,6 +162,10 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                 System.out.println("必须先选择一张图片");
         }
         else if(s.equals("保存图片")){
+            if (js!=null){
+                jp.remove(js);
+                jp.repaint();
+            }
             JFileChooser jfc2 = new JFileChooser("C:\\Users\\ZDX\\Pictures\\Voto");
             jfc2.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             FileNameExtensionFilter filter = new FileNameExtensionFilter("png","jpg","png");
@@ -157,13 +178,17 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                 save(path);
                 System.out.println("保存成功");
             } catch (IOException ioException) {
-                ioException.printStackTrace();
+                System.out.println("未保存");
             }
         }else
                 System.out.println("未选取文件");
         }
 
         else if(s.equals("上一步")){
+            if (js!=null){
+                jp.remove(js);
+                jp.repaint();
+            }
             if (imageList.getSize()>1){
             this.imageList.deleteFirst();
             BufferedImage temp = this.imageList.getHead().getT();
@@ -174,9 +199,9 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             else
                 System.out.println("不能回退");
         }
-
         else
             System.out.println("其他");
+
     }
 
     //画图片
