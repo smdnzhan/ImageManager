@@ -1,5 +1,9 @@
 package PCcamera;
 
+import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamPanel;
+import com.github.sarxos.webcam.WebcamResolution;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -11,6 +15,8 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
+
 
 public class PixelActionListener implements ActionListener,PixelConfig {
     public JPanel jp;
@@ -18,11 +24,14 @@ public class PixelActionListener implements ActionListener,PixelConfig {
     public int[][] pixelArr ; //rgb值
     public File input ;
     public BufferedImage bi_img;
+    public BufferedImage delta= new BufferedImage(400,500,BufferedImage.TYPE_INT_RGB);
     public PixelMouse pm;
     public Mosaic mc ;
     public File output;
     public Linked<BufferedImage> imageList ;
     JSlider js;
+    public Webcam webcam = Webcam.getDefault();
+    WebcamPanel wpanel ;
     //构造方法
     public PixelActionListener(JPanel jp) {
         this.jp = jp;
@@ -47,6 +56,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
             input =jfc.getSelectedFile();
             try {
                 pixelArr = getImagePixel(input.getAbsolutePath());//打开图片时缓存图片
+
             } catch (Exception ioException) {
                 System.out.println("未选择图片");
             }
@@ -66,7 +76,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                     int gray = (c[0]+c[1]+c[2])/3; //平均法取灰度值
                     bg.setColor(new Color(gray,gray,gray));
                     bg.drawRect(i, j, 1,1);
-                    //pixelArr[i][j]=gray<<16|gray<<8|gray;
+                    pixelArr[i][j]=gray<<16|gray<<8|gray;
                     //保存像素值变化
                 }
             }
@@ -131,7 +141,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                             bw=0;
                         bg.setColor(new Color(bw,bw,bw));
                         bg.drawLine(i , j , i , j );
-                        //pixelArr[i][j]=bw<<16|bw<<8|bw;
+                        pixelArr[i][j]=bw<<16|bw<<8|bw;
                     }
                 }
                 jp.getGraphics().drawImage(bi_img,X0,Y0,null);
@@ -156,6 +166,7 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                         bg.fillRect(i, j, MOSAIC_SIZE, MOSAIC_SIZE);
                     }
                 }
+                pixelArr=readImage(bi_img);
                 jp.getGraphics().drawImage(bi_img, X0, Y0, null);
                 imageList.addFirst(bi_img);
             }else
@@ -189,15 +200,57 @@ public class PixelActionListener implements ActionListener,PixelConfig {
                 jp.remove(js);
                 jp.repaint();
             }
-            if (imageList.getSize()>1){
+            if (imageList!=null&&imageList.getSize()>1){
             this.imageList.deleteFirst();
             BufferedImage temp = this.imageList.getHead().getT();
+            pixelArr=readImage(temp);
             System.out.println("效果列表长度："+imageList.getSize());
             jp.getGraphics().drawImage(temp,X0,Y0,null);
-
-        }
-            else
+        } else
                 System.out.println("不能回退");
+        }
+
+        else if(s.equals("三角")){
+            delta(5,X0+100,Y0+100,600);
+            //mountain(X0,Y0,X0+300,Y0+200, jp.getGraphics(), 5,5.6);
+
+            moutain(X0,X0+600,Y0,Y0+600, jp.getGraphics(), 450,0.5);
+        }
+
+        else if(s.equals("相机")){
+            if (webcam.isOpen()){
+                webcam.close();
+                return;}
+                webcam.setViewSize(WebcamResolution.VGA.getSize());
+                webcam.addWebcamListener(new PhotoListener(webcam, jp));
+                WebcamPanel wpanel = new WebcamPanel(webcam);
+                wpanel.setVisible(true);
+                jp.add(wpanel, BorderLayout.SOUTH);
+                Graphics g = wpanel.getGraphics();
+                g.setColor(Color.white);
+                g.drawRect(X0,Y0,2,2);
+                jp.repaint();
+
+
+            /*
+            JFrame frame=new JFrame();
+            frame.setResizable(false);
+            frame.setSize(400,400);
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            frame.setVisible(true);
+
+            PhotoListener pl = new PhotoListener(webcam);
+            JButton take= new JButton("确定");
+            take.addActionListener(pl);
+            take.setPreferredSize(new Dimension(120, 80));
+            frame.add(take);
+
+             */
+
+
+
+
+
         }
         else
             System.out.println("其他");
@@ -255,6 +308,84 @@ public class PixelActionListener implements ActionListener,PixelConfig {
         return rgb;
     }
 
+    //从图片读取RGB数组
+    public int[][] readImage(BufferedImage b){
+        int [][] temp = new int[b.getWidth()][b.getHeight()];
+        for (int i =0;i<b.getWidth();i++){
+            for (int j =0;j<b.getHeight();j++){
+                temp[i][j] = b.getRGB(i,j);
+            }
+        }
+        return temp;
+    }
+    //从RGB数组读取图片
+    public void printImage(int [][] image,Graphics g){
+        if (image!=null){
+            for (int i=0;i<image.length;i++){
+                for (int j=0;j<image[0].length;j++){
+                    int rgb = image[i][j];
+                    g.setColor(new Color(rgb));
+                    g.drawRect(i,j,1,1);
+                }
+            }
+        }
+
+    }
+    // 传入三角形边长
+    public void delta(int n ,int x,int y,int l){
+        if (n==0){return;}
+        //n是迭代次数
+        double x1 = x-l/2;
+        //根据初始顶点和边长关系计算出另外两个顶点坐标
+        double args = Math.sqrt(3.0)/2; //等边三角形的高是1.5倍的边长
+        double y1 = y+args*l;
+        double x2 = x+l/2;
+        double y2 = y+args*l;
+
+        //进行强制类型转换 drawline需要int型
+        int xx1 = (int)x1;
+        int yy1 = (int)y1;
+        int xx2 = (int)x2;
+        int yy2 = (int)y2;
+
+        Graphics g = jp.getGraphics();
+        //画三角形
+        g.drawLine(x, y, xx1, yy1);
+        g.drawLine(x, y, xx2, yy2);
+        g.drawLine(xx1,yy1,xx2,yy2);
+
+        //三段线段的中点坐标
+        int m1x = (x+xx1)/2;
+        int m1y = (yy1+y)/2;
+        int m2x = (xx2+x)/2;
+        int m2y = (yy2+y)/2;
+        int m3x = (xx2+xx1)/2; //底边纵坐标是yy2
+
+        //连接所有中点
+        g.drawLine(m1x, m1y, m2x, m2y);
+        g.drawLine(m1x, m1y, m3x, yy2);
+        g.drawLine(m2x,m2y,m3x, yy2);
+
+        delta(n-1,m1x,m1y,l/2);
+        delta(n-1,m2x,m2y,l/2);
+        delta(n-1,x,y,l/2);
+    }
+
+    public void moutain(int xl,int xr,int yl,int yr,Graphics g,int range,double rate){
+
+        if(xr-xl<1||range==0){//递归终止 也是开始画图的起点
+            g.drawLine(xl, yl, xr, yr);
+        }else{
+            int x=(xr+xl)/2;
+            int y=(yr+yl)/2;
+            Random rand =new Random();
+            int temp=rand.nextInt(range*2)-range;
+            range=(int)(range*rate);
+            //range*rate的作用类似于倒数计数器
+            moutain(x,xr,y+temp,yr,g,range,rate);
+            moutain(xl,x,yl,y+temp,g,range,rate);
+        }
+    }
 
     public void save(String s) throws IOException {
         output = new File(s);

@@ -2,7 +2,7 @@ package PCcamera;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
+
 
 /**
  * PC版美颜相机：

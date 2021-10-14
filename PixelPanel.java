@@ -1,5 +1,9 @@
 package PCcamera;
 
+import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamPanel;
+import com.github.sarxos.webcam.WebcamResolution;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -8,6 +12,7 @@ public class PixelPanel extends JPanel implements PixelConfig {
     public JFrame jf;
     public Graphics g;
     public PixelActionListener pal;
+
 
     public PixelPanel(JFrame jf){
         this.jf = jf;
@@ -22,8 +27,9 @@ public class PixelPanel extends JPanel implements PixelConfig {
             JButton jbt = new JButton(buttonName);
             jbt.setFont(createFont());
             jbt.addActionListener(al);
-            jbt.setPreferredSize(new Dimension(120, 100));
+            jbt.setPreferredSize(new Dimension(120, 80));
             jp.add(jbt);
+
         }
     }
 
